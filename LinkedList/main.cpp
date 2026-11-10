@@ -1,46 +1,55 @@
 #include "LinkedList.h"
 
 #include <iostream>
+#include <memory>
 #include <string>
-#include <vector>
+#include <type_traits>
+#include <utility>
 
-template<typename T>
-void Print(const std::string& name, const containers::LinkedList<T>& list)
+struct Counter
 {
-    std::cout << name << ": ";
-    for (const auto& value : list)
-    {
-        std::cout << value << ' ';
-    }
-    std::cout << "(size: " << list.size() << ")\n";
-}
+    static int copies;
+
+    explicit Counter(int v) : value(v) {}
+    Counter(const Counter& other) : value(other.value) { ++copies; }
+    Counter(Counter&&) = default;
+
+    int value;
+};
+int Counter::copies = 0;
 
 int main()
 {
-    containers::LinkedList<int> numbers = { 1, 2, 3 };
-    Print("numbers", numbers);
+    static_assert(std::is_nothrow_move_constructible<containers::LinkedList<int>>::value, "move constructor must be noexcept");
+    static_assert(std::is_nothrow_move_assignable<containers::LinkedList<int>>::value, "move assignment must be noexcept");
 
-    const std::vector<std::string> source = { "a", "b", "c" };
-    const containers::LinkedList<std::string> fromVector(source.begin(), source.end());
-    Print("fromVector", fromVector);
+    containers::LinkedList<Counter> source;
+    source.emplace_front(3);
+    source.emplace_front(2);
+    source.emplace_front(1);
 
-    containers::LinkedList<int> copy(numbers);
-    copy.push_front(0);
-    Print("copy", copy);
-    Print("numbers after changing copy", numbers);
+    containers::LinkedList<Counter> moved(std::move(source));
+    std::cout << "after move constructor -> moved size: " << moved.size()
+        << ", source size: " << source.size()
+        << ", source empty: " << std::boolalpha << source.empty()
+        << ", element copies: " << Counter::copies << '\n';
 
-    containers::LinkedList<int> assigned = { 9, 9 };
-    assigned = numbers;
-    assigned.front() = 100;
-    Print("assigned", assigned);
-    Print("numbers after changing assigned", numbers);
+    containers::LinkedList<Counter> target;
+    target.emplace_front(99);
+    target = std::move(moved);
+    std::cout << "after move assignment -> target size: " << target.size()
+        << ", front: " << target.front().value
+        << ", moved size: " << moved.size()
+        << ", element copies: " << Counter::copies << '\n';
 
-    assigned = { 7, 8 };
-    Print("assigned from initializer_list", assigned);
+    source.emplace_front(42);
+    std::cout << "moved-from list is reusable -> source front: " << source.front().value << '\n';
 
-    swap(numbers, assigned);
-    Print("numbers after swap", numbers);
-    Print("assigned after swap", assigned);
+    containers::LinkedList<std::unique_ptr<int>> owners;
+    owners.push_front(std::make_unique<int>(7));
+    containers::LinkedList<std::unique_ptr<int>> newOwners = std::move(owners);
+    std::cout << "move-only elements -> value: " << *newOwners.front()
+        << ", old list empty: " << owners.empty() << '\n';
 
     return 0;
 }

@@ -125,6 +125,13 @@ namespace containers
             : LinkedList(other.begin(), other.end())
         {
         }
+
+        LinkedList(LinkedList&& other) noexcept
+            : head_(std::move(other.head_))
+            , size_(std::exchange(other.size_, 0))
+        {
+        }
+
         ~LinkedList()
         {
             clear();
@@ -136,6 +143,17 @@ namespace containers
             {
                 LinkedList copy(other);
                 swap(copy);
+            }
+            return *this;
+        }
+
+        LinkedList& operator=(LinkedList&& other) noexcept
+        {
+            if (this != &other)
+            {
+                clear();
+                head_ = std::move(other.head_);
+                size_ = std::exchange(other.size_, 0);
             }
             return *this;
         }
