@@ -1,12 +1,13 @@
 #include "LinkedList.h"
 
 #include <iostream>
-#include <stdexcept>
 #include <string>
+#include <vector>
 
 template<typename T>
-void Print(const containers::LinkedList<T>& list)
+void Print(const std::string& name, const containers::LinkedList<T>& list)
 {
+    std::cout << name << ": ";
     for (const auto& value : list)
     {
         std::cout << value << ' ';
@@ -16,36 +17,30 @@ void Print(const containers::LinkedList<T>& list)
 
 int main()
 {
-    containers::LinkedList<int> numbers;
+    containers::LinkedList<int> numbers = { 1, 2, 3 };
+    Print("numbers", numbers);
 
-    for (int i = 5; i >= 1; --i)
-    {
-        numbers.push_front(i);
-    }
-    Print(numbers);
+    const std::vector<std::string> source = { "a", "b", "c" };
+    const containers::LinkedList<std::string> fromVector(source.begin(), source.end());
+    Print("fromVector", fromVector);
 
-    for (auto& value : numbers)
-    {
-        value *= 10;
-    }
-    Print(numbers);
+    containers::LinkedList<int> copy(numbers);
+    copy.push_front(0);
+    Print("copy", copy);
+    Print("numbers after changing copy", numbers);
 
-    const auto found = std::find(numbers.cbegin(), numbers.cend(), 30);
-    std::cout << "found 30: " << std::boolalpha << (found != numbers.cend()) << '\n';
+    containers::LinkedList<int> assigned = { 9, 9 };
+    assigned = numbers;
+    assigned.front() = 100;
+    Print("assigned", assigned);
+    Print("numbers after changing assigned", numbers);
 
-    containers::LinkedList<int>::const_iterator constIt = numbers.begin();
-    auto it = numbers.begin();
-    const auto previous = it++;
-    std::cout << "first: " << *constIt << ", previous: " << *previous << ", current: " << *it << '\n';
+    assigned = { 7, 8 };
+    Print("assigned from initializer_list", assigned);
 
-    containers::LinkedList<std::string> words;
-    words.push_front("world");
-    words.push_front("hello");
-    std::cout << "length of first word: " << words.begin()->size() << '\n';
-    Print(words);
-
-    const containers::LinkedList<int> empty;
-    std::cout << "empty list begin == end: " << (empty.begin() == empty.end()) << '\n';
+    swap(numbers, assigned);
+    Print("numbers after swap", numbers);
+    Print("assigned after swap", assigned);
 
     return 0;
 }

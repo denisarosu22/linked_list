@@ -101,9 +101,50 @@ namespace containers
         using const_iterator = Iterator<true>;
 
         LinkedList() = default;
+
+        // Delegating to the default constructor guarantees the destructor runs if an element constructor throws
+        template<typename InputIt>
+        LinkedList(InputIt first, InputIt last)
+            : LinkedList()
+        {
+            std::unique_ptr<Node>* tail = &head_;
+            for (; first != last; ++first)
+            {
+                *tail = std::make_unique<Node>(*first);
+                tail = &(*tail)->next;
+                ++size_;
+            }
+        }
+
+        LinkedList(std::initializer_list<T> init)
+            : LinkedList(init.begin(), init.end())
+        {
+        }
+
+        LinkedList(const LinkedList& other)
+            : LinkedList(other.begin(), other.end())
+        {
+        }
         ~LinkedList()
         {
             clear();
+        }
+
+        LinkedList& operator=(const LinkedList& other)
+        {
+            if (this != &other)
+            {
+                LinkedList copy(other);
+                swap(copy);
+            }
+            return *this;
+        }
+
+        LinkedList& operator=(std::initializer_list<T> init)
+        {
+            LinkedList copy(init);
+            swap(copy);
+            return *this;
         }
 
         reference front()
@@ -193,6 +234,18 @@ namespace containers
                 head_ = std::move(next);
             }
             size_ = 0;
+        }
+
+        void swap(LinkedList& other) noexcept
+        {
+            using std::swap;
+            swap(head_, other.head_);
+            swap(size_, other.size_);
+        }
+
+        friend void swap(LinkedList& lhs, LinkedList& rhs) noexcept
+        {
+            lhs.swap(rhs);
         }
 
     private:
