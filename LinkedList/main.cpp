@@ -1,55 +1,64 @@
 #include "LinkedList.h"
 
 #include <iostream>
-#include <memory>
 #include <string>
-#include <type_traits>
-#include <utility>
 
-struct Counter
+struct Resource
 {
-    static int copies;
+    static int alive;
 
-    explicit Counter(int v) : value(v) {}
-    Counter(const Counter& other) : value(other.value) { ++copies; }
-    Counter(Counter&&) = default;
+    explicit Resource(int v) : value(v) { ++alive; }
+    Resource(const Resource& other) : value(other.value) { ++alive; }
+    ~Resource() { --alive; }
+
+    bool operator==(const Resource& other) const { return value == other.value; }
 
     int value;
 };
-int Counter::copies = 0;
+int Resource::alive = 0;
+
+template<typename T>
+void Print(const std::string& name, const containers::LinkedList<T>& list)
+{
+    std::cout << name << ": ";
+    for (const auto& value : list)
+    {
+        std::cout << value << ' ';
+    }
+    std::cout << "(size: " << list.size() << ")\n";
+}
 
 int main()
 {
-    static_assert(std::is_nothrow_move_constructible<containers::LinkedList<int>>::value, "move constructor must be noexcept");
-    static_assert(std::is_nothrow_move_assignable<containers::LinkedList<int>>::value, "move assignment must be noexcept");
+    containers::LinkedList<int> numbers = { 2, 1, 2, 3, 2, 4, 5, 2 };
+    Print("numbers", numbers);
 
-    containers::LinkedList<Counter> source;
-    source.emplace_front(3);
-    source.emplace_front(2);
-    source.emplace_front(1);
+    const auto removedTwos = numbers.remove(2);
+    std::cout << "removed " << removedTwos << " elements equal to 2\n";
+    Print("numbers", numbers);
 
-    containers::LinkedList<Counter> moved(std::move(source));
-    std::cout << "after move constructor -> moved size: " << moved.size()
-        << ", source size: " << source.size()
-        << ", source empty: " << std::boolalpha << source.empty()
-        << ", element copies: " << Counter::copies << '\n';
+    const auto removedOdd = numbers.remove_if([](int value) { return value % 2 != 0; });
+    std::cout << "removed " << removedOdd << " odd elements\n";
+    Print("numbers", numbers);
 
-    containers::LinkedList<Counter> target;
-    target.emplace_front(99);
-    target = std::move(moved);
-    std::cout << "after move assignment -> target size: " << target.size()
-        << ", front: " << target.front().value
-        << ", moved size: " << moved.size()
-        << ", element copies: " << Counter::copies << '\n';
+    std::cout << "removed missing value: " << numbers.remove(100) << '\n';
 
-    source.emplace_front(42);
-    std::cout << "moved-from list is reusable -> source front: " << source.front().value << '\n';
+    containers::LinkedList<int> same = { 7, 7, 7 };
+    std::cout << "remove(front()) removed: " << same.remove(same.front())
+        << ", empty: " << std::boolalpha << same.empty() << '\n';
 
-    containers::LinkedList<std::unique_ptr<int>> owners;
-    owners.push_front(std::make_unique<int>(7));
-    containers::LinkedList<std::unique_ptr<int>> newOwners = std::move(owners);
-    std::cout << "move-only elements -> value: " << *newOwners.front()
-        << ", old list empty: " << owners.empty() << '\n';
+    {
+        containers::LinkedList<Resource> resources;
+        for (int i = 0; i < 5; ++i)
+        {
+            resources.emplace_front(i);
+        }
+        std::cout << "alive resources: " << Resource::alive << '\n';
+
+        resources.remove_if([](const Resource& resource) { return resource.value < 3; });
+        std::cout << "alive after remove_if: " << Resource::alive << ", list size: " << resources.size() << '\n';
+    }
+    std::cout << "alive after list destroyed: " << Resource::alive << '\n';
 
     return 0;
 }

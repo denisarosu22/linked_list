@@ -254,6 +254,36 @@ namespace containers
             size_ = 0;
         }
 
+        // Removed nodes are kept alive until the end, so a predicate/value referring to a list element stays valid
+        template<typename Predicate>
+        size_type remove_if(Predicate predicate)
+        {
+            LinkedList removed;
+            std::unique_ptr<Node>* current = &head_;
+            while (*current)
+            {
+                if (predicate((*current)->value))
+                {
+                    auto node = std::move(*current);
+                    *current = std::move(node->next);
+                    --size_;
+                    node->next = std::move(removed.head_);
+                    removed.head_ = std::move(node);
+                    ++removed.size_;
+                }
+                else
+                {
+                    current = &(*current)->next;
+                }
+            }
+            return removed.size_;
+        }
+
+        size_type remove(const T& value)
+        {
+            return remove_if([&value](const T& element) { return element == value; });
+        }
+
         void swap(LinkedList& other) noexcept
         {
             using std::swap;
