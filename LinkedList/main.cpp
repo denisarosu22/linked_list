@@ -4,42 +4,48 @@
 #include <stdexcept>
 #include <string>
 
+template<typename T>
+void Print(const containers::LinkedList<T>& list)
+{
+    for (const auto& value : list)
+    {
+        std::cout << value << ' ';
+    }
+    std::cout << "(size: " << list.size() << ")\n";
+}
+
 int main()
 {
+    containers::LinkedList<int> numbers;
+
+    for (int i = 5; i >= 1; --i)
+    {
+        numbers.push_front(i);
+    }
+    Print(numbers);
+
+    for (auto& value : numbers)
+    {
+        value *= 10;
+    }
+    Print(numbers);
+
+    const auto found = std::find(numbers.cbegin(), numbers.cend(), 30);
+    std::cout << "found 30: " << std::boolalpha << (found != numbers.cend()) << '\n';
+
+    containers::LinkedList<int>::const_iterator constIt = numbers.begin();
+    auto it = numbers.begin();
+    const auto previous = it++;
+    std::cout << "first: " << *constIt << ", previous: " << *previous << ", current: " << *it << '\n';
+
     containers::LinkedList<std::string> words;
+    words.push_front("world");
+    words.push_front("hello");
+    std::cout << "length of first word: " << words.begin()->size() << '\n';
+    Print(words);
 
-    const std::string first = "first";
-    words.push_front(first);
-
-    std::string second = "second";
-    words.push_front(std::move(second));
-
-    words.emplace_front("third");
-
-    std::cout << "size: " << words.size() << ", front: " << words.front() << '\n';
-    std::cout << "first after copy: \"" << first << "\", second after move: \"" << second << "\"\n";
-
-    words.pop_front();
-    std::cout << "after pop_front -> size: " << words.size() << ", front: " << words.front() << '\n';
-
-    words.clear();
-    std::cout << std::boolalpha << "after clear -> empty: " << words.empty() << ", size: " << words.size() << '\n';
-
-    try
-    {
-        words.pop_front();
-    }
-    catch (const std::out_of_range& error)
-    {
-        std::cout << "exception: " << error.what() << '\n';
-    }
-
-    containers::LinkedList<int> big;
-    for (int i = 0; i < 1000000; ++i)
-    {
-        big.push_front(i);
-    }
-    std::cout << "big list size: " << big.size() << '\n';
+    const containers::LinkedList<int> empty;
+    std::cout << "empty list begin == end: " << (empty.begin() == empty.end()) << '\n';
 
     return 0;
 }

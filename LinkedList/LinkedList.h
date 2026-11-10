@@ -28,12 +28,77 @@ namespace containers
             T value;
             std::unique_ptr<Node> next;
         };
+        template<bool IsConst>
+        class Iterator
+        {
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = T;
+            using difference_type = std::ptrdiff_t;
+            using pointer = std::conditional_t<IsConst, const T*, T*>;
+            using reference = std::conditional_t<IsConst, const T&, T&>;
+
+            Iterator() = default;
+
+            explicit Iterator(Node* node) noexcept
+                : node_(node)
+            {
+            }
+
+            template<bool OtherIsConst>
+            Iterator(const Iterator<OtherIsConst>& other) noexcept
+                : node_(other.node_)
+            {
+                static_assert(IsConst || !OtherIsConst, "Cannot convert const_iterator to iterator");
+            }
+
+            reference operator*() const
+            {
+                return node_->value;
+            }
+
+            pointer operator->() const
+            {
+                return &node_->value;
+            }
+
+            Iterator& operator++()
+            {
+                node_ = node_->next.get();
+                return *this;
+            }
+
+            Iterator operator++(int)
+            {
+                Iterator previous = *this;
+                ++(*this);
+                return previous;
+            }
+
+            friend bool operator==(const Iterator& lhs, const Iterator& rhs) noexcept
+            {
+                return lhs.node_ == rhs.node_;
+            }
+
+            friend bool operator!=(const Iterator& lhs, const Iterator& rhs) noexcept
+            {
+                return !(lhs == rhs);
+            }
+
+        private:
+            template<bool>
+            friend class Iterator;
+
+            Node* node_ = nullptr;
+        };
 
     public:
         using value_type = T;
         using size_type = std::size_t;
         using reference = T&;
         using const_reference = const T&;
+        using iterator = Iterator<false>;
+        using const_iterator = Iterator<true>;
 
         LinkedList() = default;
         ~LinkedList()
@@ -51,6 +116,35 @@ namespace containers
         {
             ThrowIfEmpty("front");
             return head_->value;
+        }
+        iterator begin() noexcept
+        {
+            return iterator(head_.get());
+        }
+
+        const_iterator begin() const noexcept
+        {
+            return const_iterator(head_.get());
+        }
+
+        const_iterator cbegin() const noexcept
+        {
+            return begin();
+        }
+
+        iterator end() noexcept
+        {
+            return iterator();
+        }
+
+        const_iterator end() const noexcept
+        {
+            return const_iterator();
+        }
+
+        const_iterator cend() const noexcept
+        {
+            return end();
         }
 
         bool empty() const noexcept
