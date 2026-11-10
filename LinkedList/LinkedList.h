@@ -12,6 +12,8 @@
 
 namespace containers
 {
+    template<typename T>
+    using SplitPredicate = std::function<bool(const T& value)>;
 
     template<typename T>
     class LinkedList
@@ -282,6 +284,23 @@ namespace containers
         size_type remove(const T& value)
         {
             return remove_if([&value](const T& element) { return element == value; });
+        }
+
+        LinkedList split_when(SplitPredicate<T> condition)
+        {
+            std::unique_ptr<Node>* current = &head_;
+            size_type keptCount = 0;
+            while (*current && !condition((*current)->value))
+            {
+                current = &(*current)->next;
+                ++keptCount;
+            }
+
+            LinkedList tail;
+            tail.head_ = std::move(*current);
+            tail.size_ = size_ - keptCount;
+            size_ = keptCount;
+            return tail;
         }
 
         void swap(LinkedList& other) noexcept

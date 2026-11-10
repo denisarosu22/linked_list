@@ -3,20 +3,6 @@
 #include <iostream>
 #include <string>
 
-struct Resource
-{
-    static int alive;
-
-    explicit Resource(int v) : value(v) { ++alive; }
-    Resource(const Resource& other) : value(other.value) { ++alive; }
-    ~Resource() { --alive; }
-
-    bool operator==(const Resource& other) const { return value == other.value; }
-
-    int value;
-};
-int Resource::alive = 0;
-
 template<typename T>
 void Print(const std::string& name, const containers::LinkedList<T>& list)
 {
@@ -30,35 +16,26 @@ void Print(const std::string& name, const containers::LinkedList<T>& list)
 
 int main()
 {
-    containers::LinkedList<int> numbers = { 2, 1, 2, 3, 2, 4, 5, 2 };
-    Print("numbers", numbers);
+    containers::LinkedList<int> original = { 1, 42, 3 };
+    auto tail = original.split_when([](const int& value) { return value == 42; });
+    Print("original", original);
+    Print("tail", tail);
 
-    const auto removedTwos = numbers.remove(2);
-    std::cout << "removed " << removedTwos << " elements equal to 2\n";
-    Print("numbers", numbers);
+    containers::LinkedList<int> noMatch = { 1, 2, 3 };
+    const auto noMatchTail = noMatch.split_when([](const int& value) { return value > 100; });
+    Print("noMatch", noMatch);
+    Print("noMatchTail", noMatchTail);
 
-    const auto removedOdd = numbers.remove_if([](int value) { return value % 2 != 0; });
-    std::cout << "removed " << removedOdd << " odd elements\n";
-    Print("numbers", numbers);
+    containers::LinkedList<int> firstMatches = { 5, 6, 7 };
+    const auto firstMatchesTail = firstMatches.split_when([](const int& value) { return value == 5; });
+    Print("firstMatches", firstMatches);
+    Print("firstMatchesTail", firstMatchesTail);
 
-    std::cout << "removed missing value: " << numbers.remove(100) << '\n';
-
-    containers::LinkedList<int> same = { 7, 7, 7 };
-    std::cout << "remove(front()) removed: " << same.remove(same.front())
-        << ", empty: " << std::boolalpha << same.empty() << '\n';
-
-    {
-        containers::LinkedList<Resource> resources;
-        for (int i = 0; i < 5; ++i)
-        {
-            resources.emplace_front(i);
-        }
-        std::cout << "alive resources: " << Resource::alive << '\n';
-
-        resources.remove_if([](const Resource& resource) { return resource.value < 3; });
-        std::cout << "alive after remove_if: " << Resource::alive << ", list size: " << resources.size() << '\n';
-    }
-    std::cout << "alive after list destroyed: " << Resource::alive << '\n';
+    containers::LinkedList<std::string> words = { "keep", "this", "STOP", "and", "the", "rest" };
+    const containers::SplitPredicate<std::string> isStop = [](const std::string& word) { return word == "STOP"; };
+    const auto rest = words.split_when(isStop);
+    Print("words", words);
+    Print("rest", rest);
 
     return 0;
 }
