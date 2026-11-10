@@ -246,6 +246,7 @@ namespace containers
             --size_;
         }
 
+        // Iterative: the default recursive unique_ptr destruction could overflow the stack on long lists
         void clear() noexcept
         {
             while (head_)
