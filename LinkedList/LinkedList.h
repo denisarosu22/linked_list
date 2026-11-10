@@ -36,6 +36,22 @@ namespace containers
         using const_reference = const T&;
 
         LinkedList() = default;
+        ~LinkedList()
+        {
+            clear();
+        }
+
+        reference front()
+        {
+            ThrowIfEmpty("front");
+            return head_->value;
+        }
+
+        const_reference front() const
+        {
+            ThrowIfEmpty("front");
+            return head_->value;
+        }
 
         bool empty() const noexcept
         {
@@ -47,7 +63,52 @@ namespace containers
             return size_;
         }
 
+        void push_front(const T& value)
+        {
+            emplace_front(value);
+        }
+
+        void push_front(T&& value)
+        {
+            emplace_front(std::move(value));
+        }
+
+        template<typename... Args>
+        reference emplace_front(Args&&... args)
+        {
+            auto newNode = std::make_unique<Node>(std::forward<Args>(args)...);
+            newNode->next = std::move(head_);
+            head_ = std::move(newNode);
+            ++size_;
+            return head_->value;
+        }
+
+        void pop_front()
+        {
+            ThrowIfEmpty("pop_front");
+            const auto oldHead = std::move(head_);
+            head_ = std::move(oldHead->next);
+            --size_;
+        }
+
+        void clear() noexcept
+        {
+            while (head_)
+            {
+                auto next = std::move(head_->next);
+                head_ = std::move(next);
+            }
+            size_ = 0;
+        }
+
     private:
+        void ThrowIfEmpty(const char* operation) const
+        {
+            if (empty())
+            {
+                throw std::out_of_range(std::string("LinkedList::") + operation + ": list is empty");
+            }
+        }
         std::unique_ptr<Node> head_;
         size_type size_ = 0;
     };
